@@ -1,0 +1,436 @@
+:root {
+  color: #fff6e4;
+  background: #2a0816;
+  font-family: "Arial Rounded MT Bold", "Trebuchet MS", "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: geometricPrecision;
+  --ink: #1d0810;
+  --paper: #fff3d8;
+  --ally: #ffd84a;
+  --foe: #9fb0ff;
+  --safe-top: env(safe-area-inset-top);
+  --safe-right: env(safe-area-inset-right);
+  --safe-bottom: env(safe-area-inset-bottom);
+  --safe-left: env(safe-area-inset-left);
+  --pad-t: calc(6px + var(--safe-top));
+  --pad-r: calc(8px + var(--safe-right));
+  --pad-b: calc(6px + var(--safe-bottom));
+  --pad-l: calc(8px + var(--safe-left));
+  --stroke:
+    2px 0 0 var(--ink), -2px 0 0 var(--ink), 0 2px 0 var(--ink), 0 -2px 0 var(--ink),
+    1.5px 1.5px 0 var(--ink), -1.5px 1.5px 0 var(--ink), 1.5px -1.5px 0 var(--ink), -1.5px -1.5px 0 var(--ink),
+    0 3px 2px #0008;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body, #app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #2a0816;
+  touch-action: none;
+}
+
+#game-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+#labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.tag {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  white-space: nowrap;
+  text-align: center;
+  line-height: 1;
+  font-weight: 900;
+  color: var(--team, #fff);
+  text-shadow: var(--stroke);
+  letter-spacing: 0.01em;
+}
+
+.tag b, .tag span { display: block; }
+.tag b { font-size: 0.8rem; }
+.tag span {
+  margin-top: 1px;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tag.ally { --team: var(--ally); }
+.tag.foe { --team: var(--foe); }
+.tag.hot::after {
+  content: "▼";
+  display: block;
+  margin-top: 2px;
+  color: #fff;
+  font-size: 0.62rem;
+  animation: tag-bob 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes tag-bob {
+  from { transform: translateY(0); }
+  to { transform: translateY(3px); }
+}
+
+#rotate-hint {
+  display: none;
+  position: absolute;
+  top: calc(3.6rem + var(--safe-top));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 0.25rem 0.6rem;
+  border: 2px solid var(--ink);
+  border-radius: 0.5rem;
+  background: #ffd84a;
+  color: var(--ink);
+  font-size: 0.75rem;
+  z-index: 4;
+  pointer-events: none;
+}
+
+#hud, #controls {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+#overlay { position: absolute; z-index: 5; }
+
+#hud button, #controls button { pointer-events: auto; }
+
+/* Turn timer: round blue badge bottom-left with the match clock beneath it. */
+.timer-badge {
+  position: absolute;
+  left: var(--pad-l);
+  bottom: calc(var(--pad-b) + 18px);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 34% 28%, #d6f2ff 0 9%, transparent 10%),
+    radial-gradient(circle at 40% 35%, #5cc0ff 0%, #1f78db 48%, #0d3f96 100%);
+  border: 3px solid #f4fbff;
+  box-shadow: 0 0 0 3px var(--ink), 0 4px 0 3px #0007;
+}
+
+.timer-badge strong {
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: 900;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  text-shadow: var(--stroke);
+}
+.timer-badge strong.danger { color: #ff6b5a; }
+
+.match-clock {
+  position: absolute;
+  left: var(--pad-l);
+  bottom: var(--pad-b);
+  width: 60px;
+  margin: 0;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
+  text-shadow: var(--stroke);
+}
+
+.level-block {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--pad-b) + 40px);
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}
+
+#level-label {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #ffe9c9;
+  text-shadow: var(--stroke);
+}
+
+#banner {
+  position: fixed;
+  top: 26%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  font-size: clamp(1.2rem, 4vw, 2rem);
+  font-weight: 900;
+  color: #fff3a8;
+  text-shadow: var(--stroke);
+}
+
+.hud-side {
+  position: absolute;
+  top: var(--pad-t);
+  right: var(--pad-r);
+  display: flex;
+  gap: 6px;
+}
+
+/* Team names + coloured health bars, bottom-centre. */
+.teams {
+  position: absolute;
+  left: 50%;
+  bottom: var(--pad-b);
+  transform: translateX(-50%);
+  display: grid;
+  gap: 3px;
+  width: min(240px, 34vw);
+}
+
+.team {
+  display: grid;
+  grid-template-columns: 1fr 46%;
+  align-items: center;
+  gap: 6px;
+}
+
+.team span {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  font-size: 0.86rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: var(--stroke);
+  white-space: nowrap;
+}
+.team strong { font-variant-numeric: tabular-nums; color: var(--team); }
+.team.ally { --team: var(--ally); }
+.team.foe { --team: var(--foe); }
+.team i {
+  display: block;
+  height: 13px;
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  background: #2a0b16cc;
+  box-shadow: 0 2px 0 #0006;
+  overflow: hidden;
+}
+.team em {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(#fff8 0 30%, transparent 30%), var(--team);
+  transition: width 0.4s ease;
+}
+
+/* Wind meter: green framed bar bottom-right. */
+.wind {
+  position: absolute;
+  right: var(--pad-r);
+  bottom: calc(var(--pad-b) + 78px);
+  width: 168px;
+  display: grid;
+  gap: 2px;
+  justify-items: end;
+}
+
+.wind-track {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 18px;
+  border: 3px solid #7cf05a;
+  border-radius: 5px;
+  background: #0f1d12d9;
+  box-shadow: 0 0 0 2px var(--ink), 0 3px 0 2px #0006;
+  overflow: hidden;
+}
+.wind-track::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1.5px;
+  background: #7cf05a;
+}
+#wind-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 50%;
+  width: 0;
+  background: repeating-linear-gradient(90deg, #c7ff7a 0 6px, #5fd23c 6px 12px);
+  transition: width 0.3s ease, left 0.3s ease;
+}
+.wind-readout {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 900;
+  color: #dcffc8;
+  text-shadow: var(--stroke);
+  font-variant-numeric: tabular-nums;
+}
+.wind-readout b { display: inline-block; font-size: 0.9rem; line-height: 1; }
+
+button {
+  font: inherit;
+  font-weight: 800;
+  color: var(--ink);
+  background: linear-gradient(#ffeec2, #f0c063);
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.2rem 0.5rem;
+  box-shadow: 0 3px 0 var(--ink);
+}
+
+button:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--ink); }
+button[aria-pressed="true"] {
+  background: linear-gradient(#fff6a0, #ffd23a);
+  box-shadow: 0 3px 0 var(--ink), 0 0 0 3px #fff inset;
+}
+button:disabled { opacity: 0.45; }
+button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+#controls.locked { filter: saturate(0.6) brightness(0.92); }
+#controls.locked button:not(#pause-button) { pointer-events: none; }
+
+#weapons {
+  position: absolute;
+  top: var(--pad-t);
+  left: var(--pad-l);
+  display: flex;
+  gap: 5px;
+}
+
+#weapons button {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  min-width: 62px;
+  padding: 0.1rem 0.3rem;
+  line-height: 1.05;
+}
+#weapons span { font-size: 0.68rem; }
+#weapons small {
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+  min-height: 0.7rem;
+}
+
+.dock {
+  position: absolute;
+  bottom: var(--pad-b);
+  display: grid;
+  gap: 4px;
+}
+.dock-row { display: flex; gap: 6px; }
+.dock-move { left: calc(var(--pad-l) + 72px); }
+.dock-fire { right: var(--pad-r); justify-items: end; }
+
+#left-button, #right-button { min-width: 50px; font-size: 1.1rem; }
+#fire-button {
+  min-width: 82px;
+  font-size: 1.05rem;
+  color: #fff6e4;
+  background: linear-gradient(#ff6a50, #c8261c);
+  text-shadow: 0 1px 0 var(--ink);
+}
+#pass-button, #exit-button { background: linear-gradient(#fff6ea, #e3d3bd); }
+
+.steps, #power-wrap {
+  width: 100%;
+  min-width: 96px;
+  font-size: 0.66rem;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: var(--stroke);
+}
+.steps i, #power-wrap i {
+  display: block;
+  height: 8px;
+  margin-top: 2px;
+  border: 2px solid var(--ink);
+  border-radius: 3px;
+  background: #2a0b16cc;
+  overflow: hidden;
+}
+.steps em { display: block; height: 100%; width: 100%; background: #ffd84a; }
+#power-fill { display: block; height: 100%; width: 62%; background: linear-gradient(90deg, #ffd84a, #ff5a3c); }
+
+#overlay {
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: radial-gradient(circle at 50% 40%, #5a0f2c99, #1a0510e0);
+}
+
+.panel {
+  width: min(34rem, 100%);
+  padding: 1rem 1.1rem 0.9rem;
+  background: linear-gradient(#fff1d2, #f2d49c);
+  color: var(--ink);
+  border: 3px solid var(--ink);
+  border-radius: 1rem;
+  box-shadow: 0 6px 0 var(--ink), 0 12px 30px #0008;
+}
+.eyebrow { margin: 0; font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.panel h1 { margin: 0.15rem 0 0.4rem; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 0.95; }
+.panel p { margin: 0 0 0.7rem; }
+#play-button {
+  background: linear-gradient(#ff6a50, #c8261c);
+  color: #fff6e4;
+  min-width: 10rem;
+  font-size: 1rem;
+}
+.help { margin: 0.8rem 0 0; padding-left: 1.1rem; font-family: "Trebuchet MS", "Segoe UI", sans-serif; font-size: 0.85rem; }
+.help li + li { margin-top: 0.25rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tag.hot::after { animation: none; }
+}
+
+@media (orientation: portrait) and (max-width: 800px) {
+  #rotate-hint { display: block; }
+  #weapons { right: var(--pad-r); flex-wrap: wrap; }
+  #weapons button { min-width: 3.6rem; }
+  .hud-side { top: calc(var(--pad-t) + 104px); }
+  .level-block { bottom: calc(var(--pad-b) + 160px); }
+  .teams { bottom: calc(var(--pad-b) + 120px); width: 60vw; }
+  .wind { bottom: calc(var(--pad-b) + 176px); }
+}
+
+@media (max-height: 430px) {
+  .timer-badge { width: 54px; height: 54px; bottom: calc(var(--pad-b) + 16px); }
+  .match-clock { width: 54px; font-size: 0.74rem; }
+  .timer-badge strong { font-size: 1.5rem; }
+  .dock-move { left: calc(var(--pad-l) + 64px); }
+  .help { display: none; }
+  .team span { font-size: 0.76rem; }
+  .team i { height: 11px; }
+  .wind { width: 150px; bottom: calc(var(--pad-b) + 74px); }
+  #weapons button { min-width: 58px; }
+}

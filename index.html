@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#1c140e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="data:," />
+    <title>Minhocas: Caos Tático</title>
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="game-canvas" aria-label="Campo de batalha das minhocas"></canvas>
+      <div id="labels"></div>
+      <p id="rotate-hint">Gire o celular para a horizontal</p>
+      <header id="hud">
+        <div class="timer-badge" aria-live="polite" aria-label="Tempo do turno">
+          <strong id="timer-value">30</strong>
+        </div>
+        <p id="match-clock" class="match-clock" aria-label="Tempo de partida">0:00</p>
+        <div class="level-block">
+          <p id="level-label">Nível 1</p>
+        </div>
+        <p id="banner" hidden></p>
+        <div class="hud-side">
+          <button id="pause-button" type="button">Pausa</button>
+          <button id="mute-button" type="button">Som</button>
+        </div>
+        <div class="teams">
+          <div class="team ally">
+            <span>Brasa <strong id="player-hp">300</strong></span>
+            <i><em id="player-fill"></em></i>
+          </div>
+          <div class="team foe">
+            <span>Duna <strong id="enemy-hp">300</strong></span>
+            <i><em id="enemy-fill"></em></i>
+          </div>
+        </div>
+        <div class="wind" aria-label="Vento">
+          <i class="wind-track"><em id="wind-fill"></em></i>
+          <span class="wind-readout"><b id="wind-arrow">→</b><span id="wind-value">0.00</span></span>
+        </div>
+      </header>
+      <footer id="controls">
+        <div id="weapons" role="toolbar" aria-label="Armas">
+          <button id="weapon-bazooka" type="button" aria-pressed="true"><span>Bazuca</span><small></small></button>
+          <button id="weapon-holy" type="button" aria-pressed="false"><span>Mão Sagrada</span><small>×2</small></button>
+          <button id="weapon-donkey" type="button" aria-pressed="false"><span>Gorila</span><small>×1</small></button>
+          <button id="weapon-heli" type="button" aria-pressed="false"><span>Helicóptero</span><small>×1</small></button>
+          <button id="weapon-tank" type="button" aria-pressed="false"><span>Tanque</span><small></small></button>
+        </div>
+        <div class="dock dock-move">
+          <div class="steps" id="steps-wrap">
+            <span>Passos</span>
+            <i><em id="steps-fill"></em></i>
+          </div>
+          <div class="dock-row">
+            <button id="left-button" type="button" aria-label="Andar para a esquerda">◀</button>
+            <button id="right-button" type="button" aria-label="Andar para a direita">▶</button>
+          </div>
+        </div>
+        <div class="dock dock-fire">
+          <div id="power-wrap">
+            <span>Força</span>
+            <i><em id="power-fill"></em></i>
+          </div>
+          <div class="dock-row">
+            <button id="exit-button" type="button" hidden>Sair</button>
+            <button id="pass-button" type="button">Passar</button>
+            <button id="fire-button" type="button">Fogo</button>
+          </div>
+        </div>
+      </footer>
+      <section id="overlay">
+        <div class="panel">
+          <p class="eyebrow">Demo não oficial</p>
+          <h1 id="overlay-title">Minhocas: Caos Tático</h1>
+          <p id="overlay-copy">Carregando o campo…</p>
+          <button id="play-button" type="button" disabled>Carregando</button>
+          <button id="secondary-button" type="button" hidden>Voltar</button>
+          <ul class="help">
+            <li>Arraste no mapa para mirar e solte para atirar.</li>
+            <li>Gorila e helicóptero: marque o alvo e toque em Lançar.</li>
+            <li>◀ ▶ anda ou dirige o tanque. A oficina dá munição se você chegar nela.</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
