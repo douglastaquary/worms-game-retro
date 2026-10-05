@@ -173,6 +173,7 @@ export function createMatch(levelIndex: number, rng: () => number, phase: Phase 
     projectiles: [],
     heli: null,
     blasts: [],
+    scorches: [],
     solids,
     solidVersion: 1,
     phase,
@@ -858,6 +859,7 @@ function explode(match: Match, projectile: Projectile): void {
   const craterScale = projectile.kind === 'donkey' ? 0.95 : projectile.kind === 'holy' ? 0.75 : 0.88;
   const crater = projectile.blast * craterScale;
   carveCircle(match.solids, projectile.x, projectile.y, crater);
+  match.scorches.push({ x: projectile.x, y: projectile.y, r: crater });
   match.solidVersion += 1;
   match.blasts.push({ x: projectile.x, y: projectile.y, r: projectile.blast, age: 0, kind: projectile.kind });
   match.hitstop = projectile.kind === 'holy' || projectile.kind === 'donkey' ? 0.07 : 0.035;

@@ -144,6 +144,7 @@ const terrainVertex = /* glsl */ `
 const terrainFragment = /* glsl */ `
   uniform sampler2D uMask;
   uniform sampler2D uRock;
+  uniform vec3 uSoot;
   uniform vec2 uTexel;
   uniform float uCell;
   uniform float uTile;
@@ -202,6 +203,9 @@ const terrainFragment = /* glsl */ `
     float speck = step(0.9, hash(floor(w * 10.0)));
     sand = mix(sand, uSandDark, speck * 0.7);
     vec3 color = mix(rock, sand, crust);
+    float soot = texture2D(uMask, (w / uCell + 1.0) * uTexel).b;
+    soot *= 0.6 + 0.4 * noise(w * 2.2);
+    color = mix(color, uSoot, smoothstep(0.0, 0.75, soot) * 0.92);
     color = mix(color, uInk, crustLine * 0.95);
     color = mix(color, uInk, edge);
     gl_FragColor = vec4(color, alpha);
@@ -215,14 +219,14 @@ const terrainFragment = /* glsl */ `
  */
 export class TerrainView {
   readonly mesh: THREE.Mesh;
-  private readonly data = new Uint8Array(MASK_W * MASK_H * 2);
+  private readonly data = new Uint8Array(MASK_W * MASK_H * 4);
   private readonly mask: THREE.DataTexture;
   private readonly material: THREE.ShaderMaterial;
   private readonly padded = new Uint8Array(MASK_W * MASK_H);
   private original: Uint8Array | null = null;
 
   constructor(rock: THREE.Texture) {
-    this.mask = new THREE.DataTexture(this.data, MASK_W, MASK_H, THREE.RGFormat, THREE.UnsignedByteType);
+    this.mask = new THREE.DataTexture(this.data, MASK_W, MASK_H, THREE.RGBAFormat, THREE.UnsignedByteType);
     this.mask.unpackAlignment = 1;
     this.mask.magFilter = THREE.LinearFilter;
     this.mask.minFilter = THREE.LinearFilter;
@@ -232,6 +236,7 @@ export class TerrainView {
     this.material = new THREE.ShaderMaterial({
       uniforms: {
         uMask: { value: this.mask },
+        uSoot: { value: new THREE.Color('#24100a') },
         uRock: { value: rock },
         uTexel: { value: new THREE.Vector2(1 / MASK_W, 1 / MASK_H) },
         uCell: { value: CELL },
@@ -260,14 +265,40 @@ export class TerrainView {
   /** Call when a new level is mounted so the crust follows only the original surface. */
   reset(solids: Uint8Array): void {
     this.original = solids.slice();
-    this.update(solids);
+    this.update(solids, []);
   }
 
-  update(solids: Uint8Array): void {
+  update(solids: Uint8Array, scorches: ReadonlyArray<{ x: number; y: number; r: number }>): void {
     const original = this.original ?? solids;
     this.blurInto(solids, 0);
     this.blurInto(original, 1);
+    this.paintScorches(scorches);
     this.mask.needsUpdate = true;
+  }
+
+  private paintScorches(scorches: ReadonlyArray<{ x: number; y: number; r: number }>): void {
+    const data = this.data;
+    for (let index = 2; index < data.length; index += 4) data[index] = 0;
+    const band = 2.1;
+    for (const s of scorches) {
+      const reach = s.r + band;
+      const minI = Math.max(0, Math.floor(s.x / CELL - reach / CELL) + 1);
+      const maxI = Math.min(MASK_W - 1, Math.ceil(s.x / CELL + reach / CELL) + 1);
+      const minJ = Math.max(0, Math.floor(s.y / CELL - reach / CELL) + 1);
+      const maxJ = Math.min(MASK_H - 1, Math.ceil(s.y / CELL + reach / CELL) + 1);
+      for (let j = minJ; j <= maxJ; j += 1) {
+        const y = (j - 0.5) * CELL;
+        for (let i = minI; i <= maxI; i += 1) {
+          const x = (i - 0.5) * CELL;
+          const d = Math.hypot(x - s.x, y - s.y) - s.r;
+          if (d > band) continue;
+          const t = d <= 0 ? 1 : 1 - d / band;
+          const value = Math.round(Math.pow(t, 1.15) * 255);
+          const index = (j * MASK_W + i) * 4 + 2;
+          if (value > data[index]) data[index] = value;
+        }
+      }
+    }
   }
 
   private blurInto(solids: Uint8Array, channel: number): void {
@@ -287,7 +318,7 @@ export class TerrainView {
         const right = i < MASK_W - 1 ? padded[j * MASK_W + i + 1] : 0;
         const down = j > 0 ? padded[(j - 1) * MASK_W + i] : padded[j * MASK_W + i];
         const up = j < MASK_H - 1 ? padded[(j + 1) * MASK_W + i] : 0;
-        data[(j * MASK_W + i) * 2 + channel] = Math.round(((center + left + right + up + down) / 8) * 255);
+        data[(j * MASK_W + i) * 4 + channel] = Math.round(((center + left + right + up + down) / 8) * 255);
       }
     }
   }

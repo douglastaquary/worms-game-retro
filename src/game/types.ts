@@ -79,6 +79,12 @@ export interface Blast {
   kind: string;
 }
 
+export interface Scorch {
+  x: number;
+  y: number;
+  r: number;
+}
+
 export interface Ammo {
   holy: number;
   donkey: number;
@@ -106,6 +112,7 @@ export interface Match {
   projectiles: Projectile[];
   heli: HeliState | null;
   blasts: Blast[];
+  scorches: Scorch[];
   solids: Uint8Array;
   solidVersion: number;
   phase: Phase;

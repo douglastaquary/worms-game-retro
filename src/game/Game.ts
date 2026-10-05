@@ -391,7 +391,7 @@ export class Game {
     if (!match) return;
     if (this.worldKey !== `${match.levelIndex}-${this.seed}`) this.mountWorld();
     if (this.solidVersion !== match.solidVersion && this.terrain) {
-      this.terrain.update(match.solids);
+      this.terrain.update(match.solids, match.scorches);
       this.solidVersion = match.solidVersion;
     }
     if (match.phase !== 'menu' && match.phase !== 'pause') this.matchClock += dt;
